@@ -51,30 +51,32 @@ public class SAPServerDataProvider implements ServerDataProvider {
     }
 
     @SuppressWarnings("unchecked")
-    public void addServerData(BMap<BString, Object> serverDataConfig, BString serverName) {
+    public void addServer(BMap<BString, Object> jcoServerConfig, BString serverName) {
         Properties properties = new Properties();
         try {
-            properties.setProperty(ServerDataProvider.JCO_GWHOST,
-                    serverDataConfig.getStringValue(SAPConstants.JCO_GWHOST).toString());
-            properties.setProperty(ServerDataProvider.JCO_GWSERV,
-                    serverDataConfig.getStringValue(SAPConstants.JCO_GWSERV).toString());
-            properties.setProperty(ServerDataProvider.JCO_PROGID,
-                    serverDataConfig.getStringValue(SAPConstants.JCO_PROGID).toString());
-            BMap<BString, Object> advancedConfigs = (BMap<BString, Object>) serverDataConfig.getMapValue(
-                    SAPConstants.ADVANCED_CONFIGS);
-            if (advancedConfigs != null) {
-                if (!advancedConfigs.isEmpty()) {
-                    advancedConfigs.entrySet().forEach(entry -> {
+            if (jcoServerConfig.getType().getName().equals(SAPConstants.JCO_SERVER_CONFIG_NAME)) {
+                properties.setProperty(ServerDataProvider.JCO_GWHOST,
+                        jcoServerConfig.getStringValue(SAPConstants.JCO_GWHOST).toString());
+                properties.setProperty(ServerDataProvider.JCO_GWSERV,
+                        jcoServerConfig.getStringValue(SAPConstants.JCO_GWSERV).toString());
+                properties.setProperty(ServerDataProvider.JCO_PROGID,
+                        jcoServerConfig.getStringValue(SAPConstants.JCO_PROGID).toString());
+            } else {
+                if (!jcoServerConfig.isEmpty()) {
+                    jcoServerConfig.entrySet().forEach(entry -> {
                         BString key = entry.getKey();
                         BString value = (BString) entry.getValue();
+                        String stripedKey = key.toString().substring(1, key.toString().length() - 1);
                         try {
-                            properties.setProperty(key.toString(), value.toString());
+                            properties.setProperty(stripedKey, value.toString());
                         } catch (Exception e) {
                             throw new RuntimeException("Error while adding destination property " + key.toString()
                                     + " : " + e.getMessage());
                         }
                         properties.setProperty(key.toString(), value.toString());
                     });
+                } else {
+                    throw new RuntimeException("Provided a empty advanced configuration for server");
                 }
             }
             serverProperties.put(serverName.toString(), properties);
